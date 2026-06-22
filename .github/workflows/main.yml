@@ -12,11 +12,16 @@ jobs:
 
       - name: Setup Homebrew and Build Tools
         run: |
-          # Download the tools the server is missing
           brew install make wget xz
-          
+
+      - name: Check Folder Files
+        run: |
+          # This will print out all files so we can see where the build rules are hidden
+          ls -lah
+
       - name: Run Build Script
         run: |
           export SLIMMED=0
-          # Tell it exactly where the new gmake tool is located
-          /opt/homebrew/bin/gmake -j$(sysctl -n hw.ncpu) package PLATFORM=2
+          # Let's try running the direct shell script or the ios target rule
+          ./buildjdk.sh || /opt/homebrew/bin/gmake ios || /opt/homebrew/bin/gmake
+
