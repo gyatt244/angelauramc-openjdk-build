@@ -1,27 +1,44 @@
-name: Custom Java 25 Build
+name: Compile Pure Java 25 for iOS
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Build JRE
+    name: Compile Darwin Aarch64
     runs-on: macos-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Homebrew and Build Tools
+      - name: Install Apple Building SDKs
         run: |
-          brew install make wget xz
+          # Install the specific cross-compiling tools Apple requires
+          brew install autoconf make wget xz
+          
+      - name: Clone Official OpenJDK Source
+        run: |
+          # Pull down the real, raw Java 25 source code directly from Oracle/OpenJDK
+          git clone --depth 1 -b jdk-25 https://github.com openjdk-src
 
-      - name: Check Folder Files
+      - name: Configure and Build
         run: |
-          # This will print out all files so we can see where the build rules are hidden
-          ls -lah
+          cd openjdk-src
+          # Configure Java to build explicitly for iOS (Darwin ARM64)
+          sh configure \
+            --openjdk-target=aarch64-apple-darwin \
+            --with-debug-level=release \
+            --with-jvm-variants=zero
+          
+          # Force the cloud Mac to compile everything into a tarball
+          /opt/homebrew/bin/gmake images
+          
+          # Compress the fresh build folder so you can download it
+          tar -czf ../openjdk-25-darwin-arm64.tar.gz build/*/images/jdk
 
-      - name: Run Build Script
-        run: |
-          export SLIMMED=0
-          # Let's try running the direct shell script or the ios target rule
-          ./buildjdk.sh || /opt/homebrew/bin/gmake ios || /opt/homebrew/bin/gmake
+      - name: Upload Java 25 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openjdk-25-darwin-arm64
+          path: openjdk-25-darwin-arm64.tar.gz
+
 
