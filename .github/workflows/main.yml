@@ -10,7 +10,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Homebrew and Build Tools
+        run: |
+          # Download the tools the server is missing
+          brew install make wget xz
+          
       - name: Run Build Script
         run: |
           export SLIMMED=0
-          gmake -j$(sysctl -n hw.ncpu) package PLATFORM=2
+          # Tell it exactly where the new gmake tool is located
+          /opt/homebrew/bin/gmake -j$(sysctl -n hw.ncpu) package PLATFORM=2
